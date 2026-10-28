@@ -1,7 +1,22 @@
-# campus-common
+# `campus.common`
 
-This package contains shared code and utilities for other Campus subpackages.
+The shared kernel of the Campus platform: environment handling, error
+types, introspection helpers, schemas, and validation utilities.
 
-**Note:** This package is not intended to be installed directly by end users. It is used as a dependency by other installable subpackages (such as `client`, `vault`, and `apps`).
+This directory is the package source of the **campus-common**
+distribution — see the repository root [README](../../../../../README.md)
+for installation, the public-interface contract, CI-enforced rules, and
+the versioning policy. The declared surface is snapshotted in
+`tests/interface_manifest.json` at the repository root.
 
-If you are looking to install Campus components, please use `poetry install` in the relevant subpackage directory (see the root README for details).
+Subpackages:
+
+- `env` — environment-variable access (function and `env.VAR_NAME`
+  attribute style), dotenv loading, deployment-environment helpers
+- `errors` — API/OAuth error taxonomy, field validation errors, and
+  Flask error handlers (flask imported lazily)
+- `schema` — OpenAPI-aligned datatypes and domain aliases
+  (see [schema/README.md](schema/README.md))
+- `utils` — `url`, `secret` (bcrypt wrappers), `uid`, `utc_time`,
+  `datacls` (loaded lazily; `import campus.common` stays bcrypt-free)
+- `validation` — record validation
