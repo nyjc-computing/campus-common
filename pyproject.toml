@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "campus-common"
-version = "0.2.0"
+version = "0.2.1"
 description = "Campus shared kernel: env, errors, introspect, schema, utils, validation - PEP 420 namespace portion under campus/common"
 authors = ["Ng Jun Siang <ngjunsiang@gmail.com>"]
 readme = "README.md"
