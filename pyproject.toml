@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "campus-common"
+version = "0.1.0"
+description = "Campus shared kernel - PEP 420 namespace portion under campus/common"
+authors = ["Ng Jun Siang <ngjunsiang@gmail.com>"]
+readme = "README.md"
+packages = [{include = "campus/common", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11.0,<3.15"
+bcrypt = "^5.0.0"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ['E', 'W', 'F', 'I', 'B', 'C4', 'SIM']
+# Policy (mirrors the campus monorepo): ruff enforces style; humans rewrite
+# code. Autofixes are disabled repo-wide (see campus docs/STYLE-GUIDE.md).
+fixable = []
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
