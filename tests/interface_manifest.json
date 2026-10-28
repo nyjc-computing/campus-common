@@ -1,0 +1,113 @@
+{
+  "campus.common": [
+    "env",
+    "errors",
+    "introspect",
+    "schema",
+    "utils",
+    "validation"
+  ],
+  "campus.common.env": [
+    "DEVELOPMENT",
+    "Env",
+    "GetSecretFunc",
+    "PRODUCTION",
+    "STAGING",
+    "TESTING",
+    "block_env",
+    "confirm_action_in_env",
+    "contains",
+    "delete",
+    "get",
+    "get_flag",
+    "getsecret",
+    "keys",
+    "load_dotenv",
+    "register_getsecret",
+    "require",
+    "require_env",
+    "set"
+  ],
+  "campus.common.errors": [
+    "ConflictError",
+    "FieldError",
+    "ForbiddenError",
+    "InternalError",
+    "InvalidRequestError",
+    "JsonDict",
+    "NotFoundError",
+    "UnauthorizedError",
+    "ValidationError",
+    "api_errors",
+    "auth_errors",
+    "base",
+    "handlers",
+    "init_app",
+    "token_errors",
+    "validation"
+  ],
+  "campus.common.errors.auth_errors": [
+    "AUTH_RESPONSE_ERROR_TYPES",
+    "AccessDeniedError",
+    "AuthorizationError",
+    "InvalidRequestError",
+    "InvalidScopeError",
+    "ServerError",
+    "TemporarilyUnavailableError",
+    "UnauthorizedClientError",
+    "UnsupportedResponseTypeError"
+  ],
+  "campus.common.errors.base": [
+    "APIError",
+    "AUTH_RESPONSE_ERROR_TYPES",
+    "ErrorConstant",
+    "OAuthError",
+    "TOKEN_RESPONSE_ERROR_TYPES"
+  ],
+  "campus.common.errors.token_errors": [
+    "AccessDeniedError",
+    "AuthorizationPendingError",
+    "ExpiredTokenError",
+    "InvalidClientError",
+    "InvalidGrantError",
+    "InvalidRequestError",
+    "InvalidScopeError",
+    "SlowDownError",
+    "TOKEN_RESPONSE_ERROR_TYPES",
+    "TokenError",
+    "UnauthorizedClientError",
+    "UnsupportedGrantTypeError"
+  ],
+  "campus.common.errors.validation": [
+    "FieldError",
+    "ValidationError"
+  ],
+  "campus.common.schema": [
+    "Array",
+    "Boolean",
+    "CAMPUS_KEY",
+    "CampusID",
+    "Date",
+    "DateTime",
+    "Email",
+    "Integer",
+    "Number",
+    "Object",
+    "String",
+    "Time",
+    "Url",
+    "UserID",
+    "base",
+    "openapi"
+  ],
+  "campus.common.utils": [
+    "datacls",
+    "secret",
+    "uid",
+    "url",
+    "utc_time"
+  ],
+  "campus.common.validation": [
+    "record"
+  ]
+}

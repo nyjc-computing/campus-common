@@ -13,7 +13,34 @@ It also hosts the deployment-environment helpers (the Env constants,
 ENV, the block_env/confirm_action_in_env/require_env decorators and
 load_dotenv), folded in from campus.common.devops so that common code
 can gate on the environment without pulling in campus.deploy.
+
+Attribute access to arbitrary variables (env.CLIENT_ID) is provided by
+module-level __getattr__ and is likewise public interface - deploy
+tooling and the SDK read configuration this way. Dynamic names are
+intentionally not enumerable in __all__.
 """
+
+__all__ = [
+    "Env",
+    "DEVELOPMENT",
+    "TESTING",
+    "STAGING",
+    "PRODUCTION",
+    "get",
+    "get_flag",
+    "set",
+    "delete",
+    "contains",
+    "keys",
+    "require",
+    "require_env",
+    "block_env",
+    "confirm_action_in_env",
+    "load_dotenv",
+    "register_getsecret",
+    "getsecret",
+    "GetSecretFunc",
+]
 
 import os
 from functools import wraps

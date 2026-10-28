@@ -1,6 +1,9 @@
 """campus.common.errors
 
 API error handling for Campus.
+
+`handlers` is the Flask integration surface; flask/werkzeug are
+imported lazily inside it (#861).
 """
 
 from . import api_errors, auth_errors, handlers, token_errors, validation
@@ -20,6 +23,8 @@ __all__ = [
     "JsonDict",
     "api_errors",
     "auth_errors",
+    "base",
+    "handlers",
     "token_errors",
     "validation",
     "ValidationError",

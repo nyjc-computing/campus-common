@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "campus-common"
-version = "0.1.0"
+version = "0.2.0"
 description = "Campus shared kernel: env, errors, introspect, schema, utils, validation - PEP 420 namespace portion under campus/common"
 authors = ["Ng Jun Siang <ngjunsiang@gmail.com>"]
 readme = "README.md"
@@ -38,6 +38,10 @@ fixable = []
 ignore = [
     'W291', 'W292', 'W293',  # trailing whitespace: formatting, not lint
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# scripts/ bootstraps sys.path before importing campus - intentional.
+"scripts/*" = ['E402']
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
