@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — 2026-10-28
+
+- `utils` submodules other than `url` are now loaded lazily (module
+  `__getattr__`), so a plain `import campus.common` no longer loads
+  bcrypt — restores the lean-import contract guarded by the suite's
+  `test_import_common_is_lean`. Public interface unchanged (same
+  `__all__`; `from campus.common.utils import secret` works as before).
+
 ## 0.2.0 — 2026-10-28
 
 First locked public-interface release. The interface is now
