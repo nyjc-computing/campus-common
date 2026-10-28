@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "campus-common"
 version = "0.1.0"
-description = "Campus shared kernel - PEP 420 namespace portion under campus/common"
+description = "Campus shared kernel: env, errors, introspect, schema, utils, validation - PEP 420 namespace portion under campus/common"
 authors = ["Ng Jun Siang <ngjunsiang@gmail.com>"]
 readme = "README.md"
 packages = [{include = "campus/common", from = "src"}]
@@ -9,6 +9,22 @@ packages = [{include = "campus/common", from = "src"}]
 [tool.poetry.dependencies]
 python = ">=3.11.0,<3.15"
 bcrypt = "^5.0.0"
+
+[tool.poetry.group.dev.dependencies]
+# Test-only: campus.common itself is flask-free at import time (#861) -
+# the error-handler tests exercise handlers inside a live Flask test app.
+flask = "^3.0.0"
+werkzeug = "^3.0.0"
+ruff = "^0.16.9"
+pyright = "^1.1.391"
+
+[tool.pyright]
+include = ["src", "tests"]
+useLibraryCodeForTypes = true
+venvPath = "."
+venv = ".venv"
+stubPath = ""
+exclude = ["**/__pycache__", ".venv"]
 
 [tool.ruff]
 target-version = "py311"
@@ -19,6 +35,9 @@ select = ['E', 'W', 'F', 'I', 'B', 'C4', 'SIM']
 # Policy (mirrors the campus monorepo): ruff enforces style; humans rewrite
 # code. Autofixes are disabled repo-wide (see campus docs/STYLE-GUIDE.md).
 fixable = []
+ignore = [
+    'W291', 'W292', 'W293',  # trailing whitespace: formatting, not lint
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
