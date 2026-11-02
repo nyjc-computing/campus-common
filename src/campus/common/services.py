@@ -1,13 +1,17 @@
 """campus.common.services
 
-Service URL registry for Campus deployments.
+Service URL resolution for Campus deployments.
 
-One resolver owns where Campus services live, replacing the URL tables
-that used to be duplicated across campus.config, the campus_python SDK,
-and per-app resolvers. Services are identified by their dotted names
-("campus.auth", "campus.api", "campus.audit"); apps outside the core
-three (e.g. "campus.profile") resolve through the same chain without
-needing a table entry, as long as an override or base URL is set.
+Campus is deployment-agnostic: no deployment topology is baked into the
+shared kernel — not origins, not environments, not service lists. Where
+services live is configured entirely through the environment (one
+gateway base URL and/or per-service overrides), which is the source of
+truth. Everything else a consumer needs to know about a service comes
+from its OpenAPI description, published at the service's standard path.
+
+Any dotted service name resolves ("campus.auth", "campus.api",
+"campus.audit", "campus.profile", ...); there is no registry of known
+services to update.
 
 Resolution precedence:
 
@@ -18,12 +22,12 @@ Resolution precedence:
 3. ``CAMPUS_BASE_URL`` then ``BASE_URL`` — one origin fronting every
    service (gateway / single-server deployments). Callers append each
    service's route prefix (``/auth/v1``, ``/audit/v1``) themselves.
-4. The per-environment ``BASE_URLS`` table (development, staging,
-   production direct origins).
 
 Override and base values must be bare origins (``scheme://host[:port]``,
 no path, no trailing slash); an invalid value raises ``ValueError``
-naming the variable, mirroring the ``PUBLIC_URL`` contract.
+naming the variable, mirroring the ``PUBLIC_URL`` contract. An
+unconfigured service is an error naming the variables to set — there is
+deliberately no fallback table.
 
 Two entry points share the chain:
 
@@ -35,22 +39,15 @@ Two entry points share the chain:
   in-process Flask apps, and a service must not route to itself through
   its public URL.
 - `resolve_base_url` — client semantics (what the campus_python SDK
-  uses): overrides and the base URL win as configured; no rewriting,
-  because a client library must reach the real services even when
-  ``ENV=testing`` is set in its host process (testing resolves like
-  development).
-
-Both read the deployment environment at call time (``ENV``, with the
-SDK's ``CAMPUS_ENV`` as fallback — the duality is unified here), so
-processes that set it after import (e.g. test harnesses) resolve
-correctly.
+  uses): configuration wins as set, no rewriting — a client library
+  must reach the real services even when ``ENV=testing`` is set in its
+  host process.
 
 This module is stdlib-only and flask-free at import (the campus.common
 contract, #861).
 """
 
 __all__ = [
-    "BASE_URLS",
     "get_base_url",
     "resolve_base_url",
 ]
@@ -59,41 +56,6 @@ from urllib.parse import urlparse
 
 from campus.common import env
 from campus.common.utils import url
-
-# Direct per-environment service origins, used when no override or base
-# URL is configured. Outer keys are service names; inner keys are
-# campus.common.env deployment environments. "testing" resolves to the
-# development origin for client semantics: pre-registry consumers (the
-# SDK) treated testing like development, and a client library must
-# reach a real service even when its host process runs tests. Client
-# resolution never targets the caller's own canonical origin — that is
-# what get_base_url's canonical_in_testing/self_canonical flags are for.
-_BASE_URLS_BY_SERVICE: dict[str, dict[str, str]] = {
-    "campus.auth": {
-        env.DEVELOPMENT: "https://campusauth-development.up.railway.app",
-        env.STAGING: "https://auth.campus.nyjc.dev",
-        env.PRODUCTION: "https://auth.campus.nyjc.app",
-    },
-    "campus.api": {
-        env.DEVELOPMENT: "https://campusapi-development.up.railway.app",
-        env.STAGING: "https://api.campus.nyjc.dev",
-        env.PRODUCTION: "https://api.campus.nyjc.app",
-    },
-    "campus.audit": {
-        env.DEVELOPMENT: "https://campusaudit-development.up.railway.app",
-        env.STAGING: "https://audit.campus.nyjc.dev",
-        env.PRODUCTION: "https://audit.campus.nyjc.app",
-    },
-}
-
-# TESTING shares the development tier; see the comment above.
-BASE_URLS: dict[str, dict[str, str]] = {
-    name: {
-        **tiers,
-        env.TESTING: tiers[env.DEVELOPMENT],
-    }
-    for name, tiers in _BASE_URLS_BY_SERVICE.items()
-}
 
 # Fallback variables applied to every service, in precedence order.
 _BASE_URL_VARS = ("CAMPUS_BASE_URL", "BASE_URL")
@@ -136,9 +98,8 @@ def resolve_base_url(
     """Resolve the base URL (bare origin) for a Campus service.
 
     Args:
-        app_name: Service name (e.g. "campus.auth", "campus.api",
-            "campus.audit"). Names outside BASE_URLS resolve through
-            overrides or the base URL only.
+        app_name: Dotted service name (e.g. "campus.auth",
+            "campus.api", "campus.profile").
         canonical_in_testing: Resolve every service to the canonical
             origin when ``ENV=testing`` (deployment/harness semantics).
         self_canonical: Resolve a deployment to the canonical origin
@@ -149,12 +110,13 @@ def resolve_base_url(
         str: Bare origin (scheme://host[:port]) serving the service.
 
     Raises:
-        ValueError: If no override or base URL is set and the service
-            has no entry for the current environment, or if a set
-            override/base variable is not a bare origin.
+        ValueError: If no override or base URL is configured (the
+            message names the variables to set), or if a configured
+            variable is not a bare origin.
     """
-    app_env = env.get("ENV", env.get("CAMPUS_ENV", env.DEVELOPMENT))
-    if canonical_in_testing and app_env == env.TESTING:
+    if canonical_in_testing and env.get(
+            "ENV", env.get("CAMPUS_ENV", env.DEVELOPMENT)
+    ) == env.TESTING:
         return url.canonical_origin()
     if self_canonical and env.get("DEPLOY") == app_name:
         return url.canonical_origin()
@@ -169,19 +131,11 @@ def resolve_base_url(
         if origin:
             return origin
 
-    tier = BASE_URLS.get(app_name)
-    if tier is None:
-        raise ValueError(
-            f"No base URL registered for service: {app_name} "
-            f"(set CAMPUS_{short}_URL or CAMPUS_BASE_URL, or add it "
-            f"to BASE_URLS)"
-        )
-    if app_env not in tier:
-        raise ValueError(
-            f"No base URL registered for service: {app_name} "
-            f"in environment: {app_env}"
-        )
-    return tier[app_env]
+    raise ValueError(
+        f"No base URL configured for service: {app_name} "
+        f"(set CAMPUS_{short}_URL, or CAMPUS_BASE_URL / BASE_URL for "
+        f"a gateway origin)"
+    )
 
 
 def get_base_url(app_name: str) -> str:

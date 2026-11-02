@@ -1,4 +1,10 @@
-"""Tests for campus.common.services (service URL registry)."""
+"""Tests for campus.common.services (service URL resolution).
+
+The resolution contract: environment variables are the source of truth
+(no baked-in topology — Campus is deployment-agnostic), per-service
+overrides beat the gateway base URL, and an unconfigured service is an
+error naming the variables to set.
+"""
 
 import contextlib
 import os
@@ -12,7 +18,7 @@ class ServiceURLTestCase(unittest.TestCase):
 
     def setUp(self):
         # Resolution reads env at call time; pin and restore every
-        # variable the registry consults (CI sets ENV=testing globally,
+        # variable the resolver consults (CI sets ENV=testing globally,
         # so ENV is always set explicitly here and restored after).
         self.patch_env(
             ENV=env.DEVELOPMENT,
@@ -46,7 +52,7 @@ class ServiceURLTestCase(unittest.TestCase):
 
 
 class TestResolutionPrecedence(ServiceURLTestCase):
-    """CAMPUS_<S>_URL > <S>_URL > CAMPUS_BASE_URL > BASE_URL > table."""
+    """CAMPUS_<S>_URL > <S>_URL > CAMPUS_BASE_URL > BASE_URL."""
 
     def test_prefixed_override_wins(self):
         self.patch_env(
@@ -79,23 +85,12 @@ class TestResolutionPrecedence(ServiceURLTestCase):
             "https://base-prefixed.example",
         )
 
-    def test_bare_base_beats_table(self):
+    def test_base_url_applies_to_every_service(self):
         self.patch_env(BASE_URL="https://base.example")
-        self.assertEqual(
-            services.get_base_url("campus.audit"),
-            "https://base.example",
-        )
-
-    def test_table_fallback_by_environment(self):
-        self.assertEqual(
-            services.get_base_url("campus.auth"),
-            "https://campusauth-development.up.railway.app",
-        )
-        self.patch_env(ENV=env.PRODUCTION)
-        self.assertEqual(
-            services.get_base_url("campus.audit"),
-            "https://audit.campus.nyjc.app",
-        )
+        for app_name in ("campus.auth", "campus.api", "campus.audit"):
+            self.assertEqual(
+                services.get_base_url(app_name), "https://base.example"
+            )
 
     def test_base_url_supports_non_core_services(self):
         self.patch_env(CAMPUS_PROFILE_URL="https://profile.example")
@@ -103,6 +98,24 @@ class TestResolutionPrecedence(ServiceURLTestCase):
             services.resolve_base_url("campus.profile"),
             "https://profile.example",
         )
+
+
+class TestNoBakedInTopology(ServiceURLTestCase):
+    """Unconfigured services error; there is no fallback table."""
+
+    def test_unconfigured_service_errors_naming_the_vars(self):
+        with self.assertRaisesRegex(ValueError, "CAMPUS_AUTH_URL"):
+            services.get_base_url("campus.auth")
+
+    def test_unconfigured_in_testing_still_errors_for_clients(self):
+        # Client semantics: testing never rewrites, and never invents a URL.
+        self.patch_env(ENV=env.TESTING)
+        with self.assertRaisesRegex(ValueError, "CAMPUS_AUDIT_URL"):
+            services.resolve_base_url("campus.audit")
+
+    def test_error_message_suggests_base_url(self):
+        with self.assertRaisesRegex(ValueError, "CAMPUS_BASE_URL"):
+            services.get_base_url("campus.profile")
 
 
 class TestDeploymentSemantics(ServiceURLTestCase):
@@ -190,69 +203,5 @@ class TestOriginValidation(ServiceURLTestCase):
         )
 
 
-class TestUnknownServices(ServiceURLTestCase):
-    """Services outside BASE_URLS need an override or base URL."""
-
-    def test_unknown_service_with_no_config_names_the_override(self):
-        with self.assertRaisesRegex(ValueError, "CAMPUS_PROFILE_URL"):
-            services.get_base_url("campus.profile")
-
-    def test_unknown_env_in_table(self):
-        self.patch_env(ENV="staging")
-        self.assertEqual(
-            services.get_base_url("campus.auth"),
-            "https://auth.campus.nyjc.dev",
-        )
-        self.patch_env(ENV="unsupported-env")
-        with self.assertRaisesRegex(ValueError, "unsupported-env"):
-            services.get_base_url("campus.auth")
-
-
 if __name__ == "__main__":
     unittest.main()
-
-
-class TestCampusEnvFallback(ServiceURLTestCase):
-    """CAMPUS_ENV is the SDK's legacy environment fallback; unified here."""
-
-    def test_campus_env_selects_tier_when_env_unset(self):
-        os.environ.pop("ENV", None)
-        self.addCleanup(self._delete_quietly, "ENV")
-        self.patch_env(CAMPUS_ENV=env.PRODUCTION)
-        self.assertEqual(
-            services.resolve_base_url("campus.auth"),
-            "https://auth.campus.nyjc.app",
-        )
-
-    def test_env_beats_campus_env(self):
-        self.patch_env(ENV=env.DEVELOPMENT, CAMPUS_ENV=env.PRODUCTION)
-        self.assertEqual(
-            services.resolve_base_url("campus.auth"),
-            "https://campusauth-development.up.railway.app",
-        )
-
-
-class TestClientTestingSemantics(ServiceURLTestCase):
-    """Client resolution (SDK contract): testing behaves like development."""
-
-    def test_testing_falls_back_to_development_origin(self):
-        self.patch_env(ENV=env.TESTING)
-        self.assertEqual(
-            services.resolve_base_url("campus.auth"),
-            "https://campusauth-development.up.railway.app",
-        )
-
-    def test_testing_with_base_url_still_uses_base_url(self):
-        self.patch_env(ENV=env.TESTING, BASE_URL="https://base.example")
-        self.assertEqual(
-            services.resolve_base_url("campus.auth"),
-            "https://base.example",
-        )
-
-    def test_get_base_url_testing_short_circuits_before_table(self):
-        # Deployment semantics unchanged: testing still canonicalizes.
-        self.patch_env(ENV=env.TESTING)
-        self.assertEqual(
-            services.get_base_url("campus.auth"),
-            "https://gateway.example",
-        )

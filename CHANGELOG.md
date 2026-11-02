@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.0 — 2026-11-02
+
+**Breaking**: `campus.common.services` no longer ships a per-environment
+`BASE_URLS` table. Campus is deployment-agnostic — the shared kernel
+must not bake in deployment topology (college-pinned origins), so the
+environment is the single source of truth: `CAMPUS_<SERVICE>_URL` /
+`<SERVICE>_URL` / `CAMPUS_BASE_URL` / `BASE_URL`. An unconfigured
+service now raises `ValueError` naming the variables to set (previously
+it fell back to hardcoded development/staging/production origins).
+Everything else a consumer needs to know about a service comes from its
+OpenAPI description at the service's standard path.
+
+- Removed the exported `BASE_URLS` symbol and the `testing`
+  resolves-to-development fallback tier (client semantics: an
+  unconfigured service errors in every environment).
+- `get_base_url` / `resolve_base_url` behavior otherwise unchanged
+  (precedence, bare-origin validation, testing/in-process canonical
+  semantics).
+
+## 0.2.2 — 2026-11-02
+
+
 ## 0.2.2 — 2026-11-02
 
 - New `campus.common.services` module: the service URL registry. One
