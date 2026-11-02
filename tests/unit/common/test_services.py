@@ -26,6 +26,7 @@ class ServiceURLTestCase(unittest.TestCase):
             AUDIT_URL="",
             CAMPUS_BASE_URL="",
             BASE_URL="",
+            CAMPUS_ENV="",
         )
 
     def patch_env(self, **values):
@@ -209,3 +210,23 @@ class TestUnknownServices(ServiceURLTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCampusEnvFallback(ServiceURLTestCase):
+    """CAMPUS_ENV is the SDK's legacy environment fallback; unified here."""
+
+    def test_campus_env_selects_tier_when_env_unset(self):
+        os.environ.pop("ENV", None)
+        self.addCleanup(self._delete_quietly, "ENV")
+        self.patch_env(CAMPUS_ENV=env.PRODUCTION)
+        self.assertEqual(
+            services.resolve_base_url("campus.auth"),
+            "https://auth.campus.nyjc.app",
+        )
+
+    def test_env_beats_campus_env(self):
+        self.patch_env(ENV=env.DEVELOPMENT, CAMPUS_ENV=env.PRODUCTION)
+        self.assertEqual(
+            services.resolve_base_url("campus.auth"),
+            "https://campusauth-development.up.railway.app",
+        )

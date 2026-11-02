@@ -39,8 +39,10 @@ Two entry points share the chain:
   in-process rewriting, because a client library must reach the real
   services even when ``ENV=testing`` is set in its host process.
 
-Both read ``ENV`` at call time, so processes that set it after import
-(e.g. test harnesses) resolve correctly.
+Both read the deployment environment at call time (``ENV``, with the
+SDK's ``CAMPUS_ENV`` as fallback — the duality is unified here), so
+processes that set it after import (e.g. test harnesses) resolve
+correctly.
 
 This module is stdlib-only and flask-free at import (the campus.common
 contract, #861).
@@ -136,7 +138,7 @@ def resolve_base_url(
             has no entry for the current environment, or if a set
             override/base variable is not a bare origin.
     """
-    app_env = env.get("ENV", env.DEVELOPMENT)
+    app_env = env.get("ENV", env.get("CAMPUS_ENV", env.DEVELOPMENT))
     if canonical_in_testing and app_env == env.TESTING:
         return url.canonical_origin()
     if self_canonical and env.get("DEPLOY") == app_name:
