@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.2 — 2026-11-02
+
+- New `campus.common.services` module: the service URL registry. One
+  resolver (`get_base_url` / `resolve_base_url`) owns where Campus
+  services live, replacing the URL tables duplicated across
+  campus.config, the campus_python SDK, and per-app resolvers.
+  Resolution precedence: `CAMPUS_<SERVICE>_URL` > `<SERVICE>_URL` >
+  `CAMPUS_BASE_URL` > `BASE_URL` > the per-environment `BASE_URLS`
+  table. Override/base values must be bare origins and are validated
+  like `PUBLIC_URL`. `get_base_url` keeps the deployment semantics
+  (testing and in-process self-calls resolve to the canonical origin);
+  `resolve_base_url` is the client semantics the SDK needs (no
+  rewriting). Services outside the core table (e.g. `campus.profile`)
+  resolve through overrides/base without registration.
+- `env.py`: declared the service-URL override variables
+  (`CAMPUS_BASE_URL`/`BASE_URL`, `CAMPUS_AUTH_URL`/`AUTH_URL`,
+  `CAMPUS_API_URL`/`API_URL`, `CAMPUS_AUDIT_URL`/`AUDIT_URL`).
+
 ## 0.2.1 — 2026-10-28
 
 - `utils` submodules other than `url` are now loaded lazily (module

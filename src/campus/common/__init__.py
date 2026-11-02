@@ -22,6 +22,7 @@ __all__ = [
     "errors",
     "introspect",
     "schema",
+    "services",
     "utils",
     "validation",
 ]
@@ -31,6 +32,7 @@ from . import (
     errors,
     introspect,
     schema,
+    services,
     utils,
     validation,
 )

@@ -17,6 +17,9 @@ Subpackages:
   Flask error handlers (flask imported lazily)
 - `schema` — OpenAPI-aligned datatypes and domain aliases
   (see [schema/README.md](schema/README.md))
+- `services` — service URL registry: one resolver for where Campus
+  services live (per-service and base-URL env overrides, per-environment
+  table; see the module docstring for the precedence chain)
 - `utils` — `url`, `secret` (bcrypt wrappers), `uid`, `utc_time`,
   `datacls` (loaded lazily; `import campus.common` stays bcrypt-free)
 - `validation` — record validation
