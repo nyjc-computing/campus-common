@@ -48,6 +48,7 @@ from campus.common import env, errors, schema, utils, validation
 | `errors` | API/OAuth error taxonomy, field validation errors, Flask error handlers (flask imported lazily) |
 | `introspect` | caller-module introspection helpers |
 | `schema` | OpenAPI-aligned datatypes, `CampusID`/`UserID` domain aliases, shared constants |
+| `services` | service URL registry: one resolver for where Campus services live (per-service + base-URL env overrides, per-environment table) |
 | `utils` | `url`, `secret` (bcrypt wrappers), `uid` generation, `utc_time`, `datacls` |
 | `validation` | record validation |
 

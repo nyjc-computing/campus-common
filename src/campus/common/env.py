@@ -80,6 +80,19 @@ MONGODB_URI: str
 POSTGRESDB_URI: str
 SQLITE_URI: str
 
+# Service URL overrides (campus.common.services registry). Per-service
+# overrides beat the base URL; CAMPUS_-prefixed forms are primary, the
+# bare forms are aliases for dedicated hosts. Values are bare origins
+# (scheme://host[:port]).
+CAMPUS_BASE_URL: str  # fallback origin fronting every Campus service (gateway deployments)
+BASE_URL: str  # bare alias of CAMPUS_BASE_URL
+CAMPUS_AUTH_URL: str  # campus.auth override (primary)
+AUTH_URL: str  # campus.auth override (bare alias)
+CAMPUS_API_URL: str  # campus.api override (primary)
+API_URL: str  # campus.api override (bare alias)
+CAMPUS_AUDIT_URL: str  # campus.audit override (primary)
+AUDIT_URL: str  # campus.audit override (bare alias)
+
 # OAuth environment variables
 CAMPUS_OAUTH_REDIRECT_URI: str  # redirect_uri for integration providers
 
