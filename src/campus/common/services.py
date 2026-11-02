@@ -35,9 +35,10 @@ Two entry points share the chain:
   in-process Flask apps, and a service must not route to itself through
   its public URL.
 - `resolve_base_url` — client semantics (what the campus_python SDK
-  uses): overrides and the base URL win as configured; no testing or
-  in-process rewriting, because a client library must reach the real
-  services even when ``ENV=testing`` is set in its host process.
+  uses): overrides and the base URL win as configured; no rewriting,
+  because a client library must reach the real services even when
+  ``ENV=testing`` is set in its host process (testing resolves like
+  development).
 
 Both read the deployment environment at call time (``ENV``, with the
 SDK's ``CAMPUS_ENV`` as fallback — the duality is unified here), so
@@ -61,8 +62,13 @@ from campus.common.utils import url
 
 # Direct per-environment service origins, used when no override or base
 # URL is configured. Outer keys are service names; inner keys are
-# campus.common.env deployment environments.
-BASE_URLS: dict[str, dict[str, str]] = {
+# campus.common.env deployment environments. "testing" resolves to the
+# development origin for client semantics: pre-registry consumers (the
+# SDK) treated testing like development, and a client library must
+# reach a real service even when its host process runs tests. Client
+# resolution never targets the caller's own canonical origin — that is
+# what get_base_url's canonical_in_testing/self_canonical flags are for.
+_BASE_URLS_BY_SERVICE: dict[str, dict[str, str]] = {
     "campus.auth": {
         env.DEVELOPMENT: "https://campusauth-development.up.railway.app",
         env.STAGING: "https://auth.campus.nyjc.dev",
@@ -78,6 +84,15 @@ BASE_URLS: dict[str, dict[str, str]] = {
         env.STAGING: "https://audit.campus.nyjc.dev",
         env.PRODUCTION: "https://audit.campus.nyjc.app",
     },
+}
+
+# TESTING shares the development tier; see the comment above.
+BASE_URLS: dict[str, dict[str, str]] = {
+    name: {
+        **tiers,
+        env.TESTING: tiers[env.DEVELOPMENT],
+    }
+    for name, tiers in _BASE_URLS_BY_SERVICE.items()
 }
 
 # Fallback variables applied to every service, in precedence order.
