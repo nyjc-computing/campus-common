@@ -12,7 +12,10 @@
   like `PUBLIC_URL`. `get_base_url` keeps the deployment semantics
   (testing and in-process self-calls resolve to the canonical origin);
   `resolve_base_url` is the client semantics the SDK needs (no
-  rewriting). Services outside the core table (e.g. `campus.profile`)
+  rewriting; `testing` resolves like development, matching the SDK's
+  pre-registry behavior). Environment resolution reads `ENV` with the
+  SDK's `CAMPUS_ENV` as fallback — the duality is unified here.
+  Services outside the core table (e.g. `campus.profile`)
   resolve through overrides/base without registration.
 - `env.py`: declared the service-URL override variables
   (`CAMPUS_BASE_URL`/`BASE_URL`, `CAMPUS_AUTH_URL`/`AUTH_URL`,
