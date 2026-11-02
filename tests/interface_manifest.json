@@ -102,7 +102,6 @@
     "openapi"
   ],
   "campus.common.services": [
-    "BASE_URLS",
     "get_base_url",
     "resolve_base_url"
   ],
