@@ -37,6 +37,7 @@ DECLARED_LEAVES = [
     "errors.auth_errors",
     "errors.token_errors",
     "errors.validation",
+    "protocol",
     "services",
 ]
 

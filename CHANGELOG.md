@@ -81,3 +81,14 @@ Made private:
 Initial release: `campus.common` carved from the campus monorepo (env,
 errors, introspect, schema, utils, validation). PEP 420 namespace
 portion; stdlib + bcrypt only; flask stays lazy (#861).
+
+## 0.3.1 — 2026-11-04
+
+- New `campus.common.protocol` module: wire-protocol constants — journey/device
+  cookie names with their TTLs and the trace/journey/device HTTP header names —
+  as fixed, deployment-invariant vocabulary (campus#1041). This module is the
+  single source of truth for the header names formerly kept in lockstep mirrors
+  (`campus.flask_campus.propagation`, `campus.audit.middleware.tracing`,
+  `campus_python.tracing`); those consumers re-source the names from here.
+  Purely additive (patch): constants only, stdlib-free of third-party imports,
+  so the lean-import contract is untouched.

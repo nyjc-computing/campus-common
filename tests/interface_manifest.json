@@ -3,6 +3,7 @@
     "env",
     "errors",
     "introspect",
+    "protocol",
     "schema",
     "services",
     "utils",
@@ -82,6 +83,19 @@
   "campus.common.errors.validation": [
     "FieldError",
     "ValidationError"
+  ],
+  "campus.common.protocol": [
+    "ACTION_JOURNEY_COOKIE",
+    "ACTION_JOURNEY_COOKIE_MAX_AGE",
+    "DEVICE_COOKIE",
+    "DEVICE_COOKIE_MAX_AGE",
+    "DEVICE_ID_HEADER",
+    "JOURNEY_COOKIE",
+    "JOURNEY_COOKIE_MAX_AGE",
+    "JOURNEY_ID_HEADER",
+    "JOURNEY_NAME_HEADER",
+    "PARENT_SPAN_ID_HEADER",
+    "TRACE_ID_HEADER"
   ],
   "campus.common.schema": [
     "Array",
