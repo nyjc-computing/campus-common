@@ -4,10 +4,13 @@ API error definitions for Campus.
 These errors represent all possible API errors that would be raised.
 """
 
+import logging
 from typing import NoReturn
 
 from .base import APIError, ErrorConstant
 from .validation import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 def raise_api_error(status: int, **body) -> NoReturn:
@@ -131,8 +134,23 @@ class InternalError(APIError):
 
     @classmethod
     def from_exception(cls, exception: Exception) -> 'InternalError':
-        """Convenience factory method"""
-        return cls(message=str(exception), error_type=type(exception).__name__)
+        """Factory: static client-facing message, detail logged once.
+
+        The message used to be ``str(exception)``, which leaked driver
+        internals into student-visible 500s — pymongo's ``InvalidURI``
+        echoes credential-bearing connection URIs, psycopg2 errors
+        carry SQL fragments, boto errors carry endpoints, and error
+        messages are a student debug surface (environment-access-policy
+        §4, campus#1131/#1128; the generic handler got the same
+        treatment in campus-common#8). The exception text goes to the
+        server log (superadmin-only surface); the raised error keeps
+        only the driver class name, in ``details.error_type``.
+        """
+        logger.error(
+            "%s raised from %s: %s",
+            cls.__name__, type(exception).__name__, exception,
+        )
+        return cls(error_type=type(exception).__name__)
 
 
 class InvalidRequestError(APIError):

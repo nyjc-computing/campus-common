@@ -16,6 +16,7 @@ Covers:
 
 import json
 import os
+import sys
 import unittest
 
 from campus.common import env
@@ -25,6 +26,11 @@ from campus.common.services import _origin_var
 _DRIVER_TEXT = (
     "pymongo.errors.InvalidURI: mongodb://user:hunter2@db.internal:27017"
 )
+
+
+def _current_exception():
+    """Return the exception currently being handled."""
+    return sys.exc_info()[1]
 
 
 def _restore_env(original):
@@ -62,13 +68,38 @@ class TestGenericErrorScrub(unittest.TestCase):
         self.assertNotIn("traceback", body["error"].get("details", {}))
 
     def test_development_keeps_exception_detail(self):
-        """Development keeps the exception text for debugging."""
+        """Development keeps the exception text for debugging.
+
+        The client-facing MESSAGE is static in every environment
+        (from_exception no longer embeds str(exception), #1128), but a
+        development 500 carries the traceback in details, which is
+        where the exception text survives for debugging.
+        """
         os.environ["ENV"] = "development"
-        body, status = handlers.handle_generic_error(
-            ValueError(_DRIVER_TEXT)
-        )
+        # Invoke from a live except context, like the real handler:
+        # to_dict's development traceback comes from sys.exc_info().
+        try:
+            raise ValueError(_DRIVER_TEXT)
+        except ValueError:
+            body, status = handlers.handle_generic_error(
+                _current_exception()
+            )
         self.assertEqual(status, 500)
-        self.assertIn("InvalidURI", body["error"]["message"])
+        self.assertEqual(body["error"]["code"], "INTERNAL_ERROR")
+        self.assertNotIn("InvalidURI", body["error"]["message"])
+        self.assertIn("InvalidURI", body["error"]["details"]["traceback"])
+
+
+class TestFromExceptionFactory(unittest.TestCase):
+    """from_exception never embeds exception text (#1128)."""
+
+    def test_message_is_static_error_type_in_details(self):
+        from campus.common.errors.api_errors import InternalError
+
+        err = InternalError.from_exception(ValueError(_DRIVER_TEXT))
+        self.assertNotIn(_DRIVER_TEXT, err.message)
+        self.assertNotIn(_DRIVER_TEXT, str(err))
+        self.assertEqual(err.details.get("error_type"), "ValueError")
 
 
 class TestNotFoundEnvelope(unittest.TestCase):
