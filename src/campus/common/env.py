@@ -226,8 +226,11 @@ def get_flag(name: str, default: bool = False) -> bool:
     elif value == "0":
         return False
     else:
+        # Name only, no value echo: env values are configuration, and
+        # "names yes, values no" keeps a mis-pasted secret out of error
+        # messages (environment-access-policy §4).
         raise OSError(
-            f"Invalid boolean flag value for {name!r}: {value!r}. "
+            f"Invalid boolean flag value for {name!r}. "
             f"Must be '0' (disabled) or '1' (enabled)."
         )
 

@@ -244,7 +244,12 @@ def handle_werkzeug_error(
     module = get_caller()
     match err:
         case werkzeug.exceptions.NotFound():
-            return {}, 404  # ignore 404 errors; too numerous
+            # No log line: 404s are routine probe noise. Still return the
+            # standard envelope — a bare {} tells the client nothing about
+            # what failed, and error messages are a student debug surface
+            # (environment-access-policy §4). The client already knows the
+            # path it called, so the message stays static (no request echo).
+            return api_errors.NotFoundError().to_dict(), 404
         case werkzeug.exceptions.InternalServerError():
             logger.exception("InternalServerError in %s: %s", module, err)
             return api_errors.InternalError().to_dict(), 500
@@ -282,13 +287,25 @@ def handle_generic_error(err: Exception) -> tuple[JsonDict, int]:
     """Handle generic exceptions.
 
     This is the fallback handler for any unhandled exceptions.
+
+    In production the client-facing message is the static internal-error
+    string: driver exceptions (pymongo, psycopg2, boto) embed internal
+    hosts, connection URIs and SQL fragments in ``str()``. Error
+    messages are a student debug surface (environment-access-policy §4),
+    so the exception detail stays in the log line (superadmin-only) and
+    — with the traceback already added by ``APIError.to_dict`` — in
+    development responses, where it aids debugging.
     """
     # Generic exception handler
     module = get_caller()
     logger.exception(
         "Unhandled exception in %s: %s", module, err
     )
-    internal_err = api_errors.InternalError.from_exception(err)
+    from campus.common import env
+    if env.ENV == env.PRODUCTION:
+        internal_err = api_errors.InternalError()
+    else:
+        internal_err = api_errors.InternalError.from_exception(err)
     return internal_err.to_dict(), internal_err.status_code
 
 

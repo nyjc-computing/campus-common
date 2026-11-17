@@ -71,10 +71,12 @@ def _origin_var(varname: str) -> str | None:
     if not value:
         return None
     parse_result = urlparse(value)
+    # Both messages name the variable without echoing its value: these are
+    # configuration surfaces, and "names yes, values no" keeps a mis-pasted
+    # secret out of error messages (environment-access-policy §4).
     if not parse_result.scheme or not parse_result.netloc:
         raise ValueError(
-            f"{varname} must be a full origin (scheme://host[:port]), "
-            f"got {value!r}"
+            f"{varname} must be a full origin (scheme://host[:port])"
         )
     if any((
             parse_result.path,
@@ -83,8 +85,7 @@ def _origin_var(varname: str) -> str | None:
             parse_result.fragment,
     )):
         raise ValueError(
-            f"{varname} must be a bare origin with no path or trailing "
-            f"slash, got {value!r}"
+            f"{varname} must be a bare origin with no path or trailing slash"
         )
     return f"{parse_result.scheme}://{parse_result.netloc}"
 

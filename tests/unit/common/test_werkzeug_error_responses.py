@@ -59,11 +59,11 @@ class TestWerkzeugErrorResponses(unittest.TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.get_json()["error"]["code"], "BAD_REQUEST")
 
-    def test_not_found_returns_empty_body_404(self):
-        """404s remain the existing bare-object response (too numerous)."""
+    def test_not_found_returns_envelope_404(self):
+        """404s carry the standard NOT_FOUND envelope, not a bare {}."""
         resp = self.client.get("/no-such-route")
         self.assertEqual(resp.status_code, 404)
-        self.assertEqual(resp.get_json(), {})
+        self.assertEqual(resp.get_json()["error"]["code"], "NOT_FOUND")
 
     def test_internal_server_error_returns_internal_error_envelope(self):
         """InternalServerError keeps the INTERNAL_ERROR envelope."""
