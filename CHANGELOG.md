@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 — 2026-11-17
+
+**Breaking**: `InternalError.from_exception` no longer embeds
+`str(exception)` in the client-facing message (campus#1128;
+environment-access-policy §4 — error messages are a student debug
+surface and driver exceptions embed internals: pymongo
+credential-bearing URIs, psycopg2 SQL fragments, boto endpoints). The
+factory now returns the static INTERNAL_ERROR message with the driver
+class name in `details.error_type`, and logs the exception text to the
+server log (superadmin-only) at raise time. All 80+ `from_exception`
+raise sites across campus.auth/api/audit are fixed by this one change;
+the development traceback in the generic handler's 500s still carries
+the exception text for debugging.
+
 ## 0.4.0 — 2026-11-17
 
 **Breaking**: policy scrubs for client-facing error surfaces
