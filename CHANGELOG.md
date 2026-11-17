@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.0 — 2026-11-17
+
+**Breaking**: policy scrubs for client-facing error surfaces
+(campus-common#8; environment-access-policy 2026-11-17 §4 — error
+messages are a student debug surface in production and must not reveal
+sensitive information).
+
+- The generic 500 handler returns the static INTERNAL_ERROR message in
+  production. It previously returned `str(exception)`, which leaked
+  driver text (pymongo `InvalidURI` echoes credential-bearing
+  connection URIs; psycopg2 errors carry SQL fragments; boto errors
+  carry endpoints) into student-visible responses. Development keeps
+  the exception text (plus the existing development traceback) for
+  debugging; the full detail is always in the server log line.
+- Unknown-route 404s return the standard NOT_FOUND envelope instead of
+  a bare `{}` — error messages must be clear about what failed. The
+  message stays static (no request-path echo).
+- `env.get_flag` and `services._origin_var` configuration errors name
+  the offending variable without echoing its value ("names yes, values
+  no"), so a mis-pasted secret cannot reach an error message.
+
 ## 0.3.0 — 2026-11-02
 
 **Breaking**: `campus.common.services` no longer ships a per-environment
