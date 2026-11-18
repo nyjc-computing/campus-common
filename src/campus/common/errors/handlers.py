@@ -221,9 +221,20 @@ def handle_token_error(
     log_error_by_status(err)
     err_dict = err.to_dict(envelope_format=True)
     from campus.common import env
-    # Remove details in production for security reasons
+    # Production strips richer details: oauth_error_description only echoes
+    # the message, and caller-supplied extras may carry internals. The
+    # RFC 6749/8628 protocol code itself is a fixed enum string that
+    # clients key their retry logic on (device-code polling distinguishes
+    # authorization_pending from slow_down/expired_token), so it survives
+    # the strip — without it the token endpoint violates its documented
+    # contract in production.
     if env.ENV == env.PRODUCTION:
-        err_dict["error"].pop("details", None)
+        details = err_dict["error"].get("details") or {}
+        oauth_error = details.get("oauth_error")
+        if oauth_error:
+            err_dict["error"]["details"] = {"oauth_error": oauth_error}
+        else:
+            err_dict["error"].pop("details", None)
     return err_dict, err.status_code
 
 
