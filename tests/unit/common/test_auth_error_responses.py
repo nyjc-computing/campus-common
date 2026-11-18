@@ -305,5 +305,65 @@ class TestAuthorizationErrorHandler(unittest.TestCase):
             self.assertIn("error", response)
 
 
+class TestTokenErrorHandlerProductionDetails(unittest.TestCase):
+    """handle_token_error must keep the RFC error code in production.
+
+    Device-code polling (RFC 8628) distinguishes authorization_pending
+    from slow_down/expired_token by the oauth_error string; production
+    strips richer details but must not strip the protocol code itself,
+    or the token endpoint breaks every RFC-compliant client.
+    """
+
+    def call_handler(self) -> tuple[dict, int]:
+        from campus.common.errors.handlers import handle_token_error
+
+        err = InvalidGrantError("Invalid or expired device code")
+        return handle_token_error(err)
+
+    def test_production_keeps_oauth_error_only(self):
+        os.environ["ENV"] = "production"
+        try:
+            response, status_code = self.call_handler()
+        finally:
+            os.environ["ENV"] = "development"
+
+        self.assertEqual(status_code, 400)
+        self.assertEqual(
+            response["error"]["details"],
+            {"oauth_error": "invalid_grant"}
+        )
+
+    def test_production_strips_description_and_extras(self):
+        os.environ["ENV"] = "production"
+        try:
+            from campus.common.errors.handlers import handle_token_error
+
+            err = InvalidClientError(
+                "Authentication failed",
+                client_id="uid-client-test",
+                debug_info="secret",
+            )
+            response, _ = handle_token_error(err)
+        finally:
+            os.environ["ENV"] = "development"
+
+        details = response["error"]["details"]
+        self.assertEqual(details, {"oauth_error": "invalid_client"})
+        self.assertNotIn("oauth_error_description", details)
+        self.assertNotIn("debug_info", details)
+
+    def test_development_keeps_full_details(self):
+        response, status_code = self.call_handler()
+
+        self.assertEqual(status_code, 400)
+        self.assertEqual(
+            response["error"]["details"]["oauth_error"], "invalid_grant"
+        )
+        self.assertEqual(
+            response["error"]["details"]["oauth_error_description"],
+            "Invalid or expired device code"
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
